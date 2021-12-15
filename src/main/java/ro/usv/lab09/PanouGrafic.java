@@ -24,38 +24,37 @@ public class PanouGrafic extends Application {
     private final Stage mainStage = new Stage();
     private String sirIntrodus = "";
     private final TextField nodCrt = new TextField();
-    private final Button btnInserare = new Button("Inserare");
-    private final Button btnCauta = new Button("Cauta");
-    private final Button btnEliminare = new Button("Elimina");
-    private final Button btnOpen = new Button("Citire fisier");
+    private final Button btnInsert = new Button("Inserare");
+    private final Button btnFind = new Button("Cautare");
+    private final Button btnDelete = new Button("Eliminare");
+    private final Button btnOpen = new Button("Citire din fisier");
     private final Button btnSave = new Button("Salvare in fisier");
-    private final Button btnClear = new Button("Clear");
-    private final Button btnClearTree = new Button("Clear Tree");
+    private final Button btnClear = new Button("Goleste consola");
+    private final Button btnClearTree = new Button("Goleste arborele");
     ArboreBinarDeCautare<String> arb = new ArboreBinarDeCautare<>();
     TextArea zonaTextArea = new TextArea("Operatii:");
 
     private HBox operatiiArbore() {
-        HBox panou = new HBox(10, nodCrt, btnInserare, btnCauta, btnEliminare,
+        HBox panou = new HBox(10, nodCrt, btnInsert, btnFind, btnDelete,
                 btnOpen, btnSave, btnClear, btnClearTree);
 
-        btnInserare.setOnAction(a -> {
+        btnInsert.setOnAction(a -> {
                     sirIntrodus = nodCrt.getText().trim();
-                    zonaTextArea.appendText("\n" + sirIntrodus);
                     if (sirIntrodus.length() != 0) {
-                        zonaTextArea.appendText(arb.add(sirIntrodus) ? " s-a inserat"
-                                : " este deja in arbore");
+                        zonaTextArea.appendText(arb.add(sirIntrodus) ? "\nNodul " + sirIntrodus + " a fost inserat in arbore"
+                                : "\nNodul " + sirIntrodus + " se afla deja in arbore");
                         nodCrt.setText("");
                     }
                 }
         );
-        btnCauta.setOnAction(a -> {
+        btnFind.setOnAction(a -> {
             sirIntrodus = nodCrt.getText().trim();
             if (sirIntrodus.length() != 0) {
-                zonaTextArea.appendText("\nCauta date: " + (arb.contains(sirIntrodus) ? sirIntrodus : "nu este in arbore"));
+                zonaTextArea.appendText("\nCautare nod: " + (arb.contains(sirIntrodus) ? sirIntrodus : "Nodul " + sirIntrodus + " nu este in arbore"));
                 nodCrt.setText("");
             }
         });
-        btnEliminare.setOnAction(a -> {
+        btnDelete.setOnAction(a -> {
             sirIntrodus = nodCrt.getText().trim();
             if (sirIntrodus.length() != 0) {
                 zonaTextArea.appendText("\nElimina date: " + (arb.contains(sirIntrodus) ? (arb.removeRec(sirIntrodus) ? "s-a eliminat din arbore" : "") : "nu este in arbore"));
@@ -66,13 +65,13 @@ public class PanouGrafic extends Application {
         btnClear.setOnAction(a -> zonaTextArea.setText("Operatii:"));
         btnClearTree.setOnAction(a -> {
             arb = new ArboreBinarDeCautare<>();
-            PauseTransition pause = new PauseTransition(Duration.seconds(1));
+            PauseTransition pause = new PauseTransition(Duration.seconds(1.5));
             zonaTextArea.setText(arb.isEmpty() ? "Arborele a fost golit." : "Nu s-a putut goli arborele.");
             pause.setOnFinished(e -> zonaTextArea.setText("Operatii: "));
             pause.play();
         });
         btnOpen.setOnAction(e -> {
-            File fin = deschideFisier(true);
+            File fin = openFile(true);
             if (fin == null)
                 return;
             try {
@@ -82,13 +81,16 @@ public class PanouGrafic extends Application {
                     arb.add(scanner.next().trim());
                     nr++;
                 }
-                zonaTextArea.setText("S-au citit " + nr + " cuvinte.");
+                if(nr == 1)
+                    zonaTextArea.setText("A fost adaugat un cuvant in arbore.");
+                else if(nr > 1)
+                    zonaTextArea.setText("Au fost adaugate " + nr + " cuvinte din fisierul " + fin.getName());
             } catch (FileNotFoundException fileNotFoundException) {
                 fileNotFoundException.printStackTrace();
             }
         });
         btnSave.setOnAction(e -> {
-            File fin = deschideFisier(false);
+            File fin = openFile(false);
             if (fin == null)
                 return;
             try {
@@ -99,8 +101,10 @@ public class PanouGrafic extends Application {
                 for (Object str : arr)
                     printWriter.println(str);
                 printWriter.close();
-
-                zonaTextArea.appendText("\nS-au scris " + nr + " cuvinte.");
+                if(nr == 1)
+                    zonaTextArea.setText("A fost scris in fisierul " + fin.getName() + " un cuvant.");
+                else if(nr > 1)
+                    zonaTextArea.appendText("\nAu fost scrise in fisierul " + fin.getName() + " " + nr + " cuvinte.");
             } catch (FileNotFoundException fileNotFoundException) {
                 fileNotFoundException.printStackTrace();
             }
@@ -108,14 +112,13 @@ public class PanouGrafic extends Application {
         return panou;
     }
 
-    private File deschideFisier(boolean citire) {
+    private File openFile(boolean citire) {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Deschide fisier cu cuvinte");
+        fileChooser.setTitle("Deschideti un fisier care contine cuvinte");
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Text Files", "*.txt"),
                 new FileChooser.ExtensionFilter("All Files", "*.*"));
-        File selectedFile = citire ? fileChooser.showOpenDialog(mainStage)
-                : fileChooser.showSaveDialog(mainStage);
+        File selectedFile = citire ? fileChooser.showOpenDialog(mainStage) : fileChooser.showSaveDialog(mainStage);
         if (selectedFile != null) {
             zonaTextArea.appendText("\n" + selectedFile);
         }
@@ -125,29 +128,25 @@ public class PanouGrafic extends Application {
     private static TextArea getTextArea() {
         TextArea ta = new TextArea();
         ta.appendText("Operatii:");
-        ta.setPrefWidth(450);
+        ta.setPrefWidth(700);
         return ta;
     }
 
-    private ListView<Object> getListaSelectie() {
+    private ListView<Object> getSelectionList() {
         ListView<Object> list = new ListView<>();
-        list.setPrefWidth(240);
-        list.setPrefHeight(250);
+        list.setPrefWidth(130);
+        list.setPrefHeight(130);
         ObservableList<Object> data = FXCollections.observableArrayList(
-                "RSD", "SRD", "SDR", "Nivele", new Separator(), "info");
+                "RSD (preordine)", "SRD (inordine)", "SDR (postordine)", "Numar nivele", new Separator(), "Info");
         list.setItems(data);
         list.getSelectionModel().selectedItemProperty()
                 .addListener((ov, oldvalue, newvalue) -> {
                             switch (newvalue.toString()) {
-                                case "RSD" -> zonaTextArea.appendText("\n- " + newvalue + ": " + arb.RSD().stream().map(ArboreBinarDeCautare.Nod::toString).collect(Collectors.joining(" ")));
-
-                                case "SRD" -> zonaTextArea.appendText("\n- " + newvalue + ": " + arb.SRD().stream().map(ArboreBinarDeCautare.Nod::toString).collect(Collectors.joining(" ")));
-
-                                case "SDR" -> zonaTextArea.appendText("\n- " + newvalue + ": " + arb.SDR().stream().map(ArboreBinarDeCautare.Nod::toString).collect(Collectors.joining(" ")));
-
-                                case "Nivele" -> zonaTextArea.appendText("\n- " + newvalue + ": " + arb.h_arbore());
-
-                                case "info" -> zonaTextArea.appendText("\nProgram Arbore de cautare binare autor Gherasim Daniel Adrian");
+                                case "RSD (preordine)" -> zonaTextArea.appendText("\n- " + newvalue + ": " + arb.RSD().stream().map(ArboreBinarDeCautare.Nod::toString).collect(Collectors.joining(" ")));
+                                case "SRD (inordine)" -> zonaTextArea.appendText("\n- " + newvalue + ": " + arb.SRD().stream().map(ArboreBinarDeCautare.Nod::toString).collect(Collectors.joining(" ")));
+                                case "SDR (postordine)" -> zonaTextArea.appendText("\n- " + newvalue + ": " + arb.SDR().stream().map(ArboreBinarDeCautare.Nod::toString).collect(Collectors.joining(" ")));
+                                case "Numar nivele" -> zonaTextArea.appendText("\n- " + newvalue + ": " + arb.h_arbore());
+                                case "Info" -> zonaTextArea.appendText("\nProgram: Arbore binar de cautare. Autor: Doroftei Andrei 3131B");
                             }
                         }
                 );
@@ -156,15 +155,15 @@ public class PanouGrafic extends Application {
 
     private HBox traversari() {
         zonaTextArea = getTextArea();
-        return new HBox(10, getListaSelectie(), zonaTextArea);
+        return new HBox(10, getSelectionList(), zonaTextArea);
     }
 
     @Override
     public void start(Stage primaryStage) {
         VBox panouGrafic = new VBox(20, operatiiArbore(), traversari());
         panouGrafic.setPadding(new Insets(10));
-        Scene scena = new Scene(panouGrafic, 720, 300);
-        primaryStage.setScene(scena);
+        Scene scene = new Scene(panouGrafic, 1000, 400);
+        primaryStage.setScene(scene);
         primaryStage.setTitle("Arbore binar de cautare");
         primaryStage.show();
     }
